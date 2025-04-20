@@ -1,127 +1,400 @@
-// src/App.js
 import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';  // 注意這裡改成命名導入
+import { createClient } from '@supabase/supabase-js';
+import './App.css';
+
+// Supabase 配置
+const supabaseUrl = 'https://niufliollslbmirwkdom.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdWZsaW9sbHNsYm1pcndrZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNTE1MzIsImV4cCI6MjA2MDYyNzUzMn0.gfVadPg08NnvhvUU_B8ZEhZ_x3peQvRncyrdQl-xlcA';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
   const [todos, setTodos] = useState([]);
-  const [input, setInput] = useState('');
+  const [newTodo, setNewTodo] = useState('');
+  const [error, setError] = useState(null);
+  const [useTableLayout, setUseTableLayout] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all', 'active', 'completed'
 
-  // 讀取待辦事項
+  // 獲取所有待辦事項
   const fetchTodos = async () => {
-    const { data, error } = await supabase
-      .from('todos')
-      .select('*')
-      .order('id', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching todos:', error);
-    } else {
-      setTodos(data);
+    try {
+      console.log('正在獲取待辦事項...');
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*');
+      if (error) throw error;
+      console.log('待辦事項數據:', data);
+      setTodos(data || []);
+    } catch (error) {
+      console.error('獲取待辦事項失敗:', error);
+      setError(`無法載入待辦事項：${error.message}`);
+      setTodos([]);
     }
   };
 
   // 新增待辦事項
-  const addTodo = async () => {
-    if (!input.trim()) return;
-
-    const { data, error } = await supabase
-      .from('todos')
-      .insert([{ text: input, isComplete: false }])
-      .single();
-
-    if (error) {
-      console.error('Error adding todo:', error);
-    } else {
-      setTodos([data, ...todos]);
-      setInput('');
+  const addTodo = async (e) => {
+    e.preventDefault();
+    if (!newTodo.trim()) return;
+    try {
+      console.log('正在新增待辦事項:', newTodo);
+      const { data, error } = await supabase
+        .from('todos')
+        .insert([{ text: newTodo, completed: false }])
+        .select();
+      if (error) throw error;
+      console.log('新增成功:', data);
+      setTodos([data[0], ...todos]);
+      setNewTodo('');
+      setError(null);
+    } catch (error) {
+      console.error('新增待辦事項失敗:', error);
+      setError(`無法新增待辦事項：${error.message}`);
     }
   };
 
-  // 更新待辦事項的完成狀態
-  const toggleTodo = async (id, isComplete) => {
-    const { data, error } = await supabase
-      .from('todos')
-      .update({ isComplete: !isComplete })
-      .eq('id', id)
-      .single();
+  // 更新待辦事項完成狀態
+  const toggleTodo = async (id, completed) => {
+    try {
+      console.log('正在切換待辦事項狀態:', { id, completed });
+      const { error } = await supabase
+        .from('todos')
+        .update({ completed: !completed })
+        .eq('id', id);
+      if (error) throw error;
+      setTodos(todos.map((todo) =>
+        todo.id === id ? { ...todo, completed: !completed } : todo
+      ));
+      console.log('切換成功:', { id, newCompleted: !completed });
+      setError(null);
+    } catch (error) {
+      console.error('更新待辦事項失敗:', error);
+      setError(`無法更新待辦事項：${error.message}`);
+    }
+  };
 
-    if (error) {
-      console.error('Error updating todo:', error);
-    } else {
-      setTodos(todos.map(todo => (todo.id === id ? data : todo)));
+  // 編輯待辦事項
+  const updateTodo = async (id, newText) => {
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ text: newText })
+        .eq('id', id);
+      if (error) throw error;
+      setTodos(todos.map((todo) =>
+        todo.id === id ? { ...todo, text: newText } : todo
+      ));
+      setError(null);
+    } catch (error) {
+      console.error('編輯待辦事項失敗:', error);
+      setError(`無法編輯待辦事項：${error.message}`);
     }
   };
 
   // 刪除待辦事項
   const deleteTodo = async (id) => {
-    const { error } = await supabase
-      .from('todos')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting todo:', error);
-    } else {
-      setTodos(todos.filter(todo => todo.id !== id));
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      setTodos(todos.filter((todo) => todo.id !== id));
+      setError(null);
+    } catch (error) {
+      console.error('刪除待辦事項失敗:', error);
+      setError(`無法刪除待辦事項：${error.message}`);
     }
   };
 
-  // 使用 useEffect 初始化時讀取待辦事項
+  // 篩選待辦事項
+  const filteredTodos = todos.filter(todo => {
+    if (filter === 'active') return !todo.completed;
+    if (filter === 'completed') return todo.completed;
+    return true; // 'all'
+  });
+
+  // 初始化時獲取待辦事項
   useEffect(() => {
     fetchTodos();
   }, []);
 
   return (
-    <div style={{ maxWidth: 500, margin: '50px auto', fontFamily: 'sans-serif' }}>
-      <h1>📝 我的待辦清單</h1>
+    <div className="container">
+      <h1 className="app-title">待辦事項</h1>
 
-      <div style={{ display: 'flex', marginBottom: '1rem' }}>
+      {/* 錯誤訊息 */}
+      {error && (
+        <div className="error-message animate-fade-in">
+          <span>{error}</span>
+          <button 
+            onClick={() => setError(null)} 
+            className="error-close"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 新增待辦事項表單 */}
+      <form onSubmit={addTodo} className="todo-form">
         <input
           type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="輸入任務..."
-          style={{ flex: 1, padding: '8px' }}
+          value={newTodo}
+          onChange={(e) => setNewTodo(e.target.value)}
+          placeholder="輸入新的待辦事項"
+          className="todo-input"
         />
-        <button onClick={addTodo} style={{ padding: '8px 12px', marginLeft: '8px' }}>
+        <button
+          type="submit"
+          className="add-button"
+        >
           新增
         </button>
+      </form>
+
+      {/* 控制面板 */}
+      <div className="control-panel">
+        <div className="filter-buttons">
+          <button 
+            onClick={() => setFilter('all')}
+            className={`control-button ${filter === 'all' ? 'control-button-active' : 'control-button-default'}`}
+          >
+            全部
+          </button>
+          <button 
+            onClick={() => setFilter('active')}
+            className={`control-button ${filter === 'active' ? 'control-button-active' : 'control-button-default'}`}
+          >
+            未完成
+          </button>
+          <button 
+            onClick={() => setFilter('completed')}
+            className={`control-button ${filter === 'completed' ? 'control-button-active' : 'control-button-default'}`}
+          >
+            已完成
+          </button>
+        </div>
+        <div className="layout-buttons">
+          <span className="layout-label">佈局:</span>
+          <button 
+            onClick={() => setUseTableLayout(false)}
+            className={`control-button ${!useTableLayout ? 'control-button-active' : 'control-button-default'}`}
+          >
+            卡片
+          </button>
+          <button 
+            onClick={() => setUseTableLayout(true)}
+            className={`control-button ${useTableLayout ? 'control-button-active' : 'control-button-default'}`}
+          >
+            表格
+          </button>
+        </div>
       </div>
 
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {todos.map(todo => (
-          <li
-            key={todo.id}
-            onClick={() => toggleTodo(todo.id, todo.isComplete)}
-            style={{
-              padding: '8px',
-              marginBottom: '4px',
-              cursor: 'pointer',
-              textDecoration: todo.isComplete ? 'line-through' : 'none',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '4px',
-            }}
+      {/* 待辦事項列表 */}
+      {useTableLayout ? (
+        <div className="todo-table-container">
+          <table className="todo-table">
+            <thead>
+              <tr className="table-header">
+                <th>完成</th>
+                <th>任務</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTodos.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="empty-message">
+                    {filter === 'all' ? '暫無待辦事項' : 
+                     filter === 'active' ? '暫無未完成事項' : 
+                     '暫無已完成事項'}
+                  </td>
+                </tr>
+              ) : (
+                filteredTodos.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onToggle={toggleTodo}
+                    onUpdate={updateTodo}
+                    onDelete={deleteTodo}
+                    isTableLayout={true}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="cards-container">
+          {filteredTodos.length === 0 ? (
+            <div className="empty-message">
+              {filter === 'all' ? '暫無待辦事項' : 
+               filter === 'active' ? '暫無未完成事項' : 
+               '暫無已完成事項'}
+            </div>
+          ) : (
+            filteredTodos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onToggle={toggleTodo}
+                onUpdate={updateTodo}
+                onDelete={deleteTodo}
+                isTableLayout={false}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 單個待辦事項組件（支援卡片和表格排版）
+function TodoItem({ todo, onToggle, onUpdate, onDelete, isTableLayout }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(todo.text);
+
+  const handleUpdate = () => {
+    if (editText.trim()) {
+      onUpdate(todo.id, editText);
+      setIsEditing(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleUpdate();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditText(todo.text);
+    }
+  };
+
+  if (isTableLayout) {
+    return (
+      <tr className="table-row">
+        <td className="table-cell">
+          <input
+            type="checkbox"
+            checked={todo.completed}
+            onChange={() => onToggle(todo.id, todo.completed)}
+            className="card-checkbox"
+          />
+        </td>
+        <td className="table-cell">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              className="edit-input"
+            />
+          ) : (
+            <span className={todo.completed ? 'completed-task' : 'card-text'}>
+              {todo.text}
+            </span>
+          )}
+        </td>
+        <td className="table-cell">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleUpdate}
+                className="save-button"
+              >
+                儲存
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditText(todo.text);
+                }}
+                className="cancel-button"
+              >
+                取消
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="edit-button"
+              >
+                編輯
+              </button>
+              <button
+                onClick={() => onDelete(todo.id)}
+                className="delete-button"
+              >
+                刪除
+              </button>
+            </>
+          )}
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <div className={`todo-card ${todo.completed ? 'completed' : ''}`}>
+      <input
+        type="checkbox"
+        checked={todo.completed}
+        onChange={() => onToggle(todo.id, todo.completed)}
+        className="card-checkbox"
+      />
+      {isEditing ? (
+        <div className="edit-form">
+          <input
+            type="text"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            className="edit-input"
+          />
+          <button
+            onClick={handleUpdate}
+            className="save-button"
           >
+            儲存
+          </button>
+          <button
+            onClick={() => {
+              setIsEditing(false);
+              setEditText(todo.text);
+            }}
+            className="cancel-button"
+          >
+            取消
+          </button>
+        </div>
+      ) : (
+        <div className="card-content">
+          <span className={todo.completed ? 'completed-task' : 'card-text'}>
             {todo.text}
+          </span>
+          <div className="card-actions">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteTodo(todo.id);
-              }}
-              style={{
-                marginLeft: '10px',
-                padding: '5px 8px',
-                backgroundColor: '#ff4747',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-              }}
+              onClick={() => setIsEditing(true)}
+              className="edit-button"
+            >
+              編輯
+            </button>
+            <button
+              onClick={() => onDelete(todo.id)}
+              className="delete-button"
             >
               刪除
             </button>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

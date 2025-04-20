@@ -1,38 +1,335 @@
-.App {
-  text-align: center;
+/* 基本樣式 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f9fafb;
+  color: #1f2937;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+/* 容器樣式 */
+.container {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 1.5rem;
   min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+/* 標題樣式 */
+.app-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: #1f2937;
+}
+
+/* 表單樣式 */
+.todo-form {
+  margin-bottom: 1.5rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 0.75rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.todo-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.todo-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.add-button {
+  padding: 0.75rem 1.25rem;
+  background-color: #2563eb;
   color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.App-link {
-  color: #61dafb;
+.add-button:hover {
+  background-color: #1d4ed8;
 }
 
-@keyframes App-logo-spin {
+/* 錯誤訊息樣式 */
+.error-message {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-close {
+  margin-left: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #b91c1c;
+}
+
+/* 控制面板樣式 */
+.control-panel {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filter-buttons, .layout-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.layout-label {
+  color: #4b5563;
+}
+
+.control-button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-button-default {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.control-button-default:hover {
+  background-color: #e5e7eb;
+}
+
+.control-button-active {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* 表格樣式 */
+.todo-table-container {
+  overflow: hidden;
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.todo-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.table-header th {
+  padding: 1rem;
+  text-align: left;
+}
+
+.table-header th:last-child {
+  text-align: right;
+}
+
+.table-row {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.15s;
+}
+
+.table-row:hover {
+  background-color: #f9fafb;
+}
+
+.table-cell {
+  padding: 1rem;
+}
+
+.table-cell:last-child {
+  text-align: right;
+}
+
+/* 卡片樣式 */
+.cards-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.empty-message {
+  padding: 1.5rem;
+  text-align: center;
+  color: #6b7280;
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.todo-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.todo-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.todo-card.completed {
+  background-color: #f9fafb;
+}
+
+.card-checkbox {
+  margin-right: 1rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  cursor: pointer;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-text {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* 完成任務的刪除線樣式 */
+.completed-task {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* 編輯模式 */
+.edit-form {
+  flex: 1;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.edit-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* 按鈕樣式 */
+.edit-button {
+  padding: 0.5rem 1rem;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.edit-button:hover {
+  background-color: #d97706;
+}
+
+.delete-button {
+  padding: 0.5rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.delete-button:hover {
+  background-color: #b91c1c;
+}
+
+.save-button {
+  padding: 0.5rem 1rem;
+  background-color: #059669;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.save-button:hover {
+  background-color: #047857;
+}
+
+.cancel-button {
+  padding: 0.5rem 1rem;
+  background-color: #4b5563;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.cancel-button:hover {
+  background-color: #374151;
+}
+
+/* 動畫 */
+@keyframes fadeIn {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
